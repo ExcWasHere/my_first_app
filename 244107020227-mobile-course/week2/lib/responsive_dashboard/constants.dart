@@ -1,0 +1,1 @@
+const double kWideBreakpoint = 700;
