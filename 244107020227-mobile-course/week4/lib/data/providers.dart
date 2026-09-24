@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'api_client.dart';
 import 'models/post.dart';
+import 'models/comment.dart';
 import 'repositories/post_repo.dart';
+import 'repositories/comment_repo.dart';
 
 final dioProvider = Provider<Dio>((ref) => createDio());
 
@@ -17,14 +19,14 @@ class PostListNotifier extends AsyncNotifier<List<Post>> {
     // Exception dari repository otomatis menjadi AsyncError.
     // Inilah ekuivalen deklaratif dari AsyncValue.guard di versi lama.
     final repository = ref.watch(postRepositoryProvider);
-    return repository.fetchPostsPage(page: 3, limit: 30);
+    return repository.fetchPosts();
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
     try {
       final repository = ref.read(postRepositoryProvider);
-      state = AsyncData(await repository.fetchPostsPage(page: 3, limit: 30));
+      state = AsyncData(await repository.fetchPosts());
     } catch (e, st) {
       state = AsyncError(e, st);
     }
@@ -34,14 +36,43 @@ class PostListNotifier extends AsyncNotifier<List<Post>> {
 final postListProvider =
     AsyncNotifierProvider<PostListNotifier, List<Post>>(
         PostListNotifier.new,
-        // Nonaktifkan retry otomatis Riverpod 3 agar error langsung
-        // final dan mudah diuji (tanpa ini, future provider di-test
-        // akan me-retry dan menggantung).
         retry: (retryCount, error) => null);
+final postByIdProvider = FutureProvider.family<Post, int>((ref, id) async {
+  final repository = ref.watch(postRepositoryProvider);
+  return repository.fetchPostById(id);
+});
 
-/// Helper khusus testing (letakkan di providers.dart): membaca state
-/// pertama yang bukan loading lewat listener + completer, sehingga
-/// test tidak menunggu retry dan tidak melakukan HTTP sungguhan.
+final commentRepositoryProvider = Provider<CommentRepository>(
+  (ref) => CommentRepository(ref.watch(dioProvider)),
+);
+
+class CommentsNotifier extends AsyncNotifier<List<Comment>> {
+  CommentsNotifier(this.postId);
+  final int postId;
+
+  @override
+  Future<List<Comment>> build() async {
+    final repository = ref.watch(commentRepositoryProvider);
+    return repository.fetchComments(postId);
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    try {
+      final repository = ref.read(commentRepositoryProvider);
+      state = AsyncData(await repository.fetchComments(postId));
+    } catch (e, st) {
+      state = AsyncError(e, st);
+    }
+  }
+}
+
+final commentsProvider =
+    AsyncNotifierProvider.family<CommentsNotifier, List<Comment>, int>(
+  CommentsNotifier.new,
+  retry: (retryCount, error) => null,
+);
+
 Future<List<Post>> readPostsOnce(ProviderContainer container) {
   final completer = Completer<List<Post>>();
   final sub = container.listen<AsyncValue<List<Post>>>(
@@ -72,27 +103,4 @@ Future<Object?> readPostsErrorOnce(ProviderContainer container) {
     fireImmediately: true,
   );
   return completer.future.whenComplete(sub.close);
-}
-
-String friendlyErrorMessage(Object error) {
-  if (error is DioException) {
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return 'Koneksi lambat atau timeout. Periksa internet Anda lalu coba lagi.';
-      case DioExceptionType.connectionError:
-        return 'Tidak dapat terhubung ke server. Periksa internet Anda.';
-      case DioExceptionType.badResponse:
-        final code = error.response?.statusCode;
-        if (code == 404) return 'Data tidak ditemukan (404).';
-        if (code == 401 || code == 403) {
-          return 'Akses ditolak ($code). Periksa kredensial Anda.';
-        }
-        return 'Server bermasalah ($code). Coba lagi nanti.';
-      default:
-        return 'Terjadi kesalahan jaringan. Coba lagi.';
-    }
-  }
-  return 'Terjadi kesalahan tak terduga: $error';
 }
