@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../data/api_errors.dart';
+import '../data/device_repo.dart';
 import '../messaging/push_service.dart';
 import '../providers/auth_provider.dart';
+import '../routes.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -19,12 +22,25 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _setupPush() async {
-    final granted = await requestNotificationPermission();
-    if (!granted) return;
+    try {
+      final granted = await requestNotificationPermission();
+      debugPrint('PUSH permission granted: $granted');
+      if (!granted) return;
+      final devices = ref.read(deviceRepositoryProvider);
 
-    await initFcmToken(onToken: (token) async {
-      fcmTokenNotifier.value = token;
-    });
+      await initFcmToken(onToken: (token) async {
+        debugPrint('PUSH token diterima (${token.length} karakter)');
+        fcmTokenNotifier.value = token;
+        try {
+          await devices.registerToken(token);
+          debugPrint('PUSH POST /devices berhasil');
+        } catch (e) {
+          debugPrint('PUSH POST /devices gagal: ${friendlyError(e)}');
+        }
+      });
+    } catch (e, st) {
+      debugPrint('PUSH setup error: $e\n$st');
+    }
   }
 
   @override
@@ -57,7 +73,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ListTile(
               leading: const Icon(Icons.campaign),
               title: Text('Pengumuman $id'),
-              onTap: () => context.go('/pengumuman/$id'),
+              onTap: () => context.go(AppRoutes.announcement(id)),
             ),
         ],
       ),

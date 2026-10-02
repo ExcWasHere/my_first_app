@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/api_errors.dart';
 import '../providers/auth_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -47,7 +48,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
-                  auth.error.toString().replaceFirst('Exception: ', ''),
+                  friendlyError(auth.error!),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
