@@ -1,14 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import '../messaging/push_service.dart';
 import '../providers/auth_provider.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    _setupPush();
+  }
+
+  Future<void> _setupPush() async {
+    final granted = await requestNotificationPermission();
+    if (!granted) return;
+
+    await initFcmToken(onToken: (token) async {
+      fcmTokenNotifier.value = token;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Campus Notify'),
@@ -22,6 +42,17 @@ class HomePage extends ConsumerWidget {
       ),
       body: ListView(
         children: [
+          ValueListenableBuilder<String?>(
+            valueListenable: fcmTokenNotifier,
+            builder: (_, token, _) => ListTile(
+              leading: const Icon(Icons.bug_report),
+              title: const Text('FCM token (debug)'),
+              subtitle: Text(
+                token == null ? 'belum ada' : '${token.substring(0, 12)}...',
+              ),
+            ),
+          ),
+          const Divider(),
           for (final id in ['1', '2', '3'])
             ListTile(
               leading: const Icon(Icons.campaign),
