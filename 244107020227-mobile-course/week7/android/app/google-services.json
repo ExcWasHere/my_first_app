@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "874316207144",
+    "project_id": "week6-mobile",
+    "storage_bucket": "week6-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:874316207144:android:80e33cf064a55d8cf3111d",
+        "android_client_info": {
+          "package_name": "com.example.week6"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCekQn4fBh1zuKr8haYNUoTCGOw_wfIIYk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
