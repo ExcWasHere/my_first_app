@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:week6/core/failures.dart';
-import 'package:week6/features/notifications/domain/repositories/device_repository.dart';
-import 'package:week6/features/notifications/domain/repositories/push_repository.dart';
-import 'package:week6/features/notifications/domain/usecases/setup_push_notifications.dart';
+import 'package:week7/core/failures.dart';
+import 'package:week7/features/notifications/domain/repositories/device_repository.dart';
+import 'package:week7/features/notifications/domain/repositories/push_repository.dart';
+import 'package:week7/features/notifications/domain/usecases/setup_push_notifications.dart';
 
 class FakePushRepository implements PushRepository {
   FakePushRepository({this.granted = true, this.tokenList = const []});

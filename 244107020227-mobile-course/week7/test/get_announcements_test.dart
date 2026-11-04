@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:week6/core/failures.dart';
-import 'package:week6/features/announcements/domain/entities/announcement.dart';
-import 'package:week6/features/announcements/domain/repositories/announcement_repository.dart';
-import 'package:week6/features/announcements/domain/usecases/get_announcements.dart';
+import 'package:week7/core/failures.dart';
+import 'package:week7/features/announcements/domain/entities/announcement.dart';
+import 'package:week7/features/announcements/domain/repositories/announcement_repository.dart';
+import 'package:week7/features/announcements/domain/usecases/get_announcements.dart';
 
 class FakeAnnouncementRepository implements AnnouncementRepository {
   FakeAnnouncementRepository({this.items = const [], this.fail = false});

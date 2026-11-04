@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:week6/core/failures.dart';
-import 'package:week6/features/auth/domain/entities/auth_session.dart';
-import 'package:week6/features/auth/domain/repositories/auth_repository.dart';
-import 'package:week6/features/auth/domain/usecases/login.dart';
+import 'package:week7/core/failures.dart';
+import 'package:week7/features/auth/domain/entities/auth_session.dart';
+import 'package:week7/features/auth/domain/repositories/auth_repository.dart';
+import 'package:week7/features/auth/domain/usecases/login.dart';
 
 class FakeAuthRepository implements AuthRepository {
   FakeAuthRepository({this.failure});
