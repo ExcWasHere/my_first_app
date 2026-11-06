@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'features/announcements/presentation/pages/announcement_page.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/providers/auth_providers.dart';
+import 'features/chat/presentation/pages/chat_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'routes.dart';
 
@@ -38,6 +39,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.announcementPattern,
         builder: (_, s) => AnnouncementPage(id: s.pathParameters['id'] ?? ''),
+      ),
+      GoRoute(
+        path: AppRoutes.chat,
+        builder: (_, _) => const ChatPage(),
       ),
     ],
   );

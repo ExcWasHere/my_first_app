@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/format.dart';
 import '../../../announcements/presentation/widgets/announcements_section.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../chat/presentation/widgets/chat_entry_button.dart';
 import '../../../notifications/presentation/providers/push_providers.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -29,6 +30,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       appBar: AppBar(
         title: const Text('Campus Notify'),
         actions: [
+          const ChatEntryButton(),
           IconButton(
             tooltip: 'Logout',
             icon: const Icon(Icons.logout),
