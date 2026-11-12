@@ -1,12 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/announcement_remote_data_source.dart';
 import '../../data/announcement_repository_impl.dart';
+import '../../data/hive_announcement_cache.dart';
 import '../../domain/entities/announcement.dart';
 import '../../domain/repositories/announcement_repository.dart';
 import '../../domain/usecases/get_announcements.dart';
 import '../../domain/usecases/search_announcements.dart';
 
 final announcementRepositoryProvider = Provider<AnnouncementRepository>(
-  (ref) => const AnnouncementRepositoryImpl(),
+  (ref) => AnnouncementRepositoryImpl(
+    remote: const FakeAnnouncementApi(),
+    cache: HiveAnnouncementCache(),
+  ),
 );
 
 final getAnnouncementsProvider = Provider<GetAnnouncements>(
@@ -24,8 +29,10 @@ final announcementsProvider = FutureProvider<List<Announcement>>((ref) async {
   return result.items;
 });
 
+/// autoDispose: state per-id dibuang saat halaman detail ditutup, supaya
+/// tidak menumpuk di memori setiap kali membuka pengumuman berbeda.
 final announcementProvider =
-    FutureProvider.family<Announcement, String>((ref, id) async {
+    FutureProvider.autoDispose.family<Announcement, String>((ref, id) async {
   final result =
       await ref.watch(announcementRepositoryProvider).fetchAnnouncement(id);
   final failure = result.failure;

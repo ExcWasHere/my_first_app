@@ -16,7 +16,15 @@ class AnnouncementPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Pengumuman $id'),
-        leading: BackButton(onPressed: () => context.go(AppRoutes.home)),
+        leading: BackButton(
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.home);
+            }
+          },
+        ),
       ),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),

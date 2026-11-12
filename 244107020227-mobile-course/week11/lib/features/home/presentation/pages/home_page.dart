@@ -24,8 +24,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final token = ref.watch(pushControllerProvider);
-
+    // Tidak ada ref.watch di sini: perubahan token FCM hanya membangun ulang
+    // _FcmTokenTile, bukan seluruh Scaffold dan daftar pengumuman.
     return Scaffold(
       appBar: AppBar(
         title: const Text('Campus Notify'),
@@ -38,17 +38,27 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
-      body: ListView(
+      body: const Column(
         children: [
-          ListTile(
-            leading: const Icon(Icons.bug_report),
-            title: const Text('FCM token (debug)'),
-            subtitle: Text(maskToken(token)),
-          ),
-          const Divider(),
-          const AnnouncementsSection(),
+          _FcmTokenTile(),
+          Divider(height: 1),
+          Expanded(child: AnnouncementsSection()),
         ],
       ),
+    );
+  }
+}
+
+class _FcmTokenTile extends ConsumerWidget {
+  const _FcmTokenTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final token = ref.watch(pushControllerProvider);
+    return ListTile(
+      leading: const Icon(Icons.bug_report),
+      title: const Text('FCM token (debug)'),
+      subtitle: Text(maskToken(token)),
     );
   }
 }

@@ -35,10 +35,10 @@ Widget _buildApp() {
         const _FakeRepository(),
       ),
     ],
+    // AnnouncementsSection memakai Expanded (daftar lazy), jadi butuh parent
+    // dengan tinggi terbatas: body Scaffold sudah cukup.
     child: const MaterialApp(
-      home: Scaffold(
-        body: SingleChildScrollView(child: AnnouncementsSection()),
-      ),
+      home: Scaffold(body: AnnouncementsSection()),
     ),
   );
 }
@@ -87,4 +87,47 @@ void main() {
     expect(find.text('Beasiswa Prestasi'), findsOneWidget);
     expect(find.byIcon(Icons.search_off), findsNothing);
   });
+
+  testWidgets('daftar panjang dibangun malas (hanya yang terlihat)',
+      (tester) async {
+    final many = [
+      for (var i = 1; i <= 500; i++)
+        Announcement(id: '$i', title: 'Item $i', body: 'isi'),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          announcementRepositoryProvider.overrideWithValue(
+            _ManyRepository(many),
+          ),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(body: AnnouncementsSection()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Item 1'), findsOneWidget);
+    expect(find.text('Item 500'), findsNothing);
+    expect(find.byType(ListTile).evaluate().length, lessThan(50));
+  });
+}
+
+class _ManyRepository implements AnnouncementRepository {
+  const _ManyRepository(this._items);
+
+  final List<Announcement> _items;
+
+  @override
+  Future<({List<Announcement> items, Failure? failure})>
+      fetchAnnouncements() async {
+    return (items: _items, failure: null);
+  }
+
+  @override
+  Future<({Announcement? item, Failure? failure})> fetchAnnouncement(
+      String id) {
+    throw UnimplementedError();
+  }
 }

@@ -29,7 +29,11 @@ class ChatMessageList extends StatelessWidget {
       controller: controller,
       padding: const EdgeInsets.all(12),
       itemCount: messages.length,
-      itemBuilder: (_, i) => ChatBubble(message: messages[i]),
+      // RepaintBoundary: gelembung yang sedang streaming di-repaint sendiri,
+      // gelembung lama tidak ikut digambar ulang tiap potongan teks tiba.
+      itemBuilder: (_, i) => RepaintBoundary(
+        child: ChatBubble(key: ValueKey(i), message: messages[i]),
+      ),
     );
   }
 }

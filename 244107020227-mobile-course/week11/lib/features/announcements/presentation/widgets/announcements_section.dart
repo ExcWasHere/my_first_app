@@ -9,45 +9,61 @@ import 'announcement_empty_state.dart';
 import 'announcement_search_field.dart';
 
 /// Kolom pencarian + daftar pengumuman + empty state.
-class AnnouncementsSection extends ConsumerWidget {
+///
+/// Memakai [Expanded] sehingga harus ditaruh di dalam parent yang tinggi-nya
+/// terbatas (mis. `Column` / `Scaffold.body`). Daftar dibangun malas lewat
+/// `ListView.builder`: hanya item yang tampil di layar yang dibuat.
+class AnnouncementsSection extends StatelessWidget {
   const AnnouncementsSection({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final query = ref.watch(announcementSearchQueryProvider);
-    final announcements = ref.watch(filteredAnnouncementsProvider);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+  Widget build(BuildContext context) {
+    return const Column(
       children: [
-        const AnnouncementSearchField(),
-        ...announcements.when<List<Widget>>(
-          loading: () => const [
-            Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          ],
-          error: (e, _) => [ListTile(title: Text(messageOf(e)))],
-          data: (items) => _resultTiles(context, items, query),
-        ),
+        AnnouncementSearchField(),
+        Expanded(child: _AnnouncementList()),
       ],
     );
   }
+}
 
-  List<Widget> _resultTiles(
-    BuildContext context,
-    List<Announcement> items,
-    String query,
-  ) {
-    if (items.isEmpty) return [AnnouncementEmptyState(query: query)];
-    return [
-      for (final a in items)
-        ListTile(
-          leading: const Icon(Icons.campaign),
-          title: Text(a.title),
-          onTap: () => context.go(AppRoutes.announcement(a.id)),
-        ),
-    ];
+class _AnnouncementList extends ConsumerWidget {
+  const _AnnouncementList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final announcements = ref.watch(filteredAnnouncementsProvider);
+    return announcements.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => ListTile(title: Text(messageOf(e))),
+      data: (items) {
+        if (items.isEmpty) {
+          final query = ref.watch(announcementSearchQueryProvider);
+          return AnnouncementEmptyState(query: query);
+        }
+        return ListView.builder(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          itemCount: items.length,
+          itemBuilder: (_, i) => _AnnouncementTile(announcement: items[i]),
+        );
+      },
+    );
+  }
+}
+
+class _AnnouncementTile extends StatelessWidget {
+  const _AnnouncementTile({required this.announcement});
+
+  final Announcement announcement;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      key: ValueKey(announcement.id),
+      leading: const Icon(Icons.campaign),
+      title: Text(announcement.title),
+      // push (bukan go): halaman beranda tetap hidup di bawah halaman detail.
+      onTap: () => context.push(AppRoutes.announcement(announcement.id)),
+    );
   }
 }
