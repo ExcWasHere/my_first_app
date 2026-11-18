@@ -1,0 +1,171 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:week10/core/failures.dart';
+import 'package:week10/features/announcements/domain/entities/announcement.dart';
+import 'package:week10/features/announcements/domain/repositories/announcement_repository.dart';
+import 'package:week10/features/announcements/presentation/providers/announcements_providers.dart';
+import 'package:week10/features/announcements/presentation/widgets/announcements_section.dart';
+
+class _FakeRepository implements AnnouncementRepository {
+  const _FakeRepository();
+
+  static const _items = [
+    Announcement(id: '1', title: 'Jadwal UTS Genap', body: 'isi 1'),
+    Announcement(id: '2', title: 'Beasiswa Prestasi', body: 'isi 2'),
+  ];
+
+  @override
+  Future<({List<Announcement> items, Failure? failure})>
+      fetchAnnouncements() async {
+    return (items: _items, failure: null);
+  }
+
+  @override
+  Future<({Announcement? item, Failure? failure})> fetchAnnouncement(
+      String id) {
+    throw UnimplementedError();
+  }
+}
+
+Widget _buildApp() {
+  return ProviderScope(
+    overrides: [
+      announcementRepositoryProvider.overrideWithValue(
+        const _FakeRepository(),
+      ),
+    ],
+    // AnnouncementsSection memakai Expanded (daftar lazy), jadi butuh parent
+    // dengan tinggi terbatas: body Scaffold sudah cukup.
+    child: const MaterialApp(
+      home: Scaffold(body: AnnouncementsSection()),
+    ),
+  );
+}
+
+void main() {
+  testWidgets('tanpa query, semua pengumuman tampil', (tester) async {
+    await tester.pumpWidget(_buildApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Jadwal UTS Genap'), findsOneWidget);
+    expect(find.text('Beasiswa Prestasi'), findsOneWidget);
+  });
+
+  testWidgets('query cocok menyaring daftar', (tester) async {
+    await tester.pumpWidget(_buildApp());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'beasiswa');
+    await tester.pump();
+
+    expect(find.text('Beasiswa Prestasi'), findsOneWidget);
+    expect(find.text('Jadwal UTS Genap'), findsNothing);
+  });
+
+  testWidgets('query tak cocok menampilkan empty state', (tester) async {
+    await tester.pumpWidget(_buildApp());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'zzz');
+    await tester.pump();
+
+    expect(find.text('Tidak ada pengumuman untuk "zzz".'), findsOneWidget);
+    expect(find.byIcon(Icons.search_off), findsOneWidget);
+  });
+
+  testWidgets('tombol hapus mengembalikan seluruh daftar', (tester) async {
+    await tester.pumpWidget(_buildApp());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'zzz');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Hapus pencarian'));
+    await tester.pump();
+
+    expect(find.text('Jadwal UTS Genap'), findsOneWidget);
+    expect(find.text('Beasiswa Prestasi'), findsOneWidget);
+    expect(find.byIcon(Icons.search_off), findsNothing);
+  });
+
+  testWidgets('repository gagal menampilkan pesan error', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          announcementRepositoryProvider.overrideWithValue(
+            const _FailingRepository(),
+          ),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(body: AnnouncementsSection()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tidak ada koneksi internet.'), findsOneWidget);
+    expect(find.byType(ListTile), findsOneWidget);
+  });
+
+  testWidgets('daftar panjang dibangun malas (hanya yang terlihat)',
+      (tester) async {
+    final many = [
+      for (var i = 1; i <= 500; i++)
+        Announcement(id: '$i', title: 'Item $i', body: 'isi'),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          announcementRepositoryProvider.overrideWithValue(
+            _ManyRepository(many),
+          ),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(body: AnnouncementsSection()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Item 1'), findsOneWidget);
+    expect(find.text('Item 500'), findsNothing);
+    expect(find.byType(ListTile).evaluate().length, lessThan(50));
+  });
+}
+
+class _FailingRepository implements AnnouncementRepository {
+  const _FailingRepository();
+
+  @override
+  Future<({List<Announcement> items, Failure? failure})>
+      fetchAnnouncements() async {
+    return (
+      items: const <Announcement>[],
+      failure: const NetworkFailure('Tidak ada koneksi internet.'),
+    );
+  }
+
+  @override
+  Future<({Announcement? item, Failure? failure})> fetchAnnouncement(
+      String id) {
+    throw UnimplementedError();
+  }
+}
+
+class _ManyRepository implements AnnouncementRepository {
+  const _ManyRepository(this._items);
+
+  final List<Announcement> _items;
+
+  @override
+  Future<({List<Announcement> items, Failure? failure})>
+      fetchAnnouncements() async {
+    return (items: _items, failure: null);
+  }
+
+  @override
+  Future<({Announcement? item, Failure? failure})> fetchAnnouncement(
+      String id) {
+    throw UnimplementedError();
+  }
+}
